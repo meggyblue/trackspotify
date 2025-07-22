@@ -415,13 +415,30 @@ function getTokenFromURL() {
 
 // Autorizzazione OAuth Spotify (sostituisce getSpotifyToken)
 
-const clientId = 'ba0f462b710640fea32a40f99aa03252'; // Inserisci il tuo vero Client ID
-const redirectUri = 'https://meggyblue.github.io/trackspotify/';
 
-async function authorizeSpotify() {
+
+function generateCodeVerifier() {
+    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
+    const values = crypto.getRandomValues(new Uint8Array(128));
+    return values.reduce((acc, x) => acc + possible[x % possible.length], "");
+}
+
+async function generateCodeChallenge(codeVerifier) {
+    const data = new TextEncoder().encode(codeVerifier);
+    const digest = await window.crypto.subtle.digest('SHA-256', data);
+    return btoa(String.fromCharCode.apply(null, [...new Uint8Array(digest)]))
+        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+// Funzione completa per il login
+async function loginWithSpotify() {
+    const clientId = 'ba0f462b710640fea32a40f99aa03252'; // Inserisci il tuo vero Client ID
+const redirectUri = 'https://meggyblue.github.io/trackspotify/';
+    
     const codeVerifier = generateCodeVerifier();
     const codeChallenge = await generateCodeChallenge(codeVerifier);
     
+    // Salva per dopo
     localStorage.setItem('code_verifier', codeVerifier);
     
     const authUrl = `https://accounts.spotify.com/authorize?` +
@@ -437,20 +454,6 @@ async function authorizeSpotify() {
 
 
 
-
-        
-function generateCodeVerifier() {
-    const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~';
-    const values = crypto.getRandomValues(new Uint8Array(128));
-    return values.reduce((acc, x) => acc + possible[x % possible.length], "");
-}
-
-async function generateCodeChallenge(codeVerifier) {
-    const data = new TextEncoder().encode(codeVerifier);
-    const digest = await window.crypto.subtle.digest('SHA-256', data);
-    return btoa(String.fromCharCode.apply(null, [...new Uint8Array(digest)]))
-        .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-}
 // Test connessione (semplificato)
 async function testConnection() {
    const statusDiv = document.getElementById('connectionStatus');
